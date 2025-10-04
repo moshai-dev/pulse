@@ -60,8 +60,13 @@ fi
 
 # --- Install Python modules ---
 echo "Installing Python modules..."
-python3 -m pip install --upgrade pip --break-system-packages
-python3 -m pip install psutil requests --break-system-packages > /dev/null 2>&1
+if [[ "$SERVER_OS" == "Ubuntu" ]]; then
+    # Ubuntu 24.04+ uses PEP 668, needs --break-system-packages
+    python3 -m pip install psutil requests --break-system-packages > /dev/null 2>&1
+else
+    # CentOS / AlmaLinux / CloudLinux / openEuler
+    python3 -m pip install psutil requests > /dev/null 2>&1
+fi
 
 # --- Setup directories ---
 mkdir -p "$CONFIG_DIR" "$DATA_DIR"
