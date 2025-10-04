@@ -1,15 +1,17 @@
 #!/bin/bash
 set -e
 
+# URLs
 AGENT_URL="https://raw.githubusercontent.com/moshai-dev/pulse/main/agent/pulse.py"
 CONFIG_URL="https://raw.githubusercontent.com/moshai-dev/pulse/main/config/config.sample.ini"
 SERVICE_URL="https://raw.githubusercontent.com/moshai-dev/pulse/main/scripts/systemd.service"
 
+# Paths
 AGENT_PATH="/usr/local/bin/moshai-pulse.py"
 CONFIG_DIR="/etc/moshai-pulse"
 CONFIG_PATH="$CONFIG_DIR/config"
-SERVICE_PATH="/etc/systemd/system/moshai-pulse.service"
 DATA_DIR="/var/lib/moshai-pulse"
+SERVICE_PATH="/etc/systemd/system/moshai-pulse.service"
 
 # --- Parse Args ---
 if [[ "$1" == "--key" && -n "$2" ]]; then
@@ -38,9 +40,14 @@ else
   exit 1
 fi
 
-echo "Installing dependencies..."
+echo "Installing system dependencies..."
 $UPDATE_CMD
-$PKG_INSTALL python3 python3-pip python3-psutil python3-requests sqlite curl > /dev/null 2>&1 || true
+$PKG_INSTALL python3 python3-pip curl sqlite -y > /dev/null 2>&1 || true
+
+# --- Install Python modules ---
+echo "Installing Python modules..."
+python3 -m pip install --upgrade pip
+python3 -m pip install psutil requests > /dev/null 2>&1
 
 # --- Setup directories ---
 mkdir -p "$CONFIG_DIR" "$DATA_DIR"
@@ -62,5 +69,5 @@ systemctl enable --now moshai-pulse.service
 
 echo ""
 echo "✅ Installation complete!"
-echo "Logs: journalctl -u moshai-pulse -f"
+echo "View logs: journalctl -u moshai-pulse -f"
 echo ""

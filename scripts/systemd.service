@@ -7,6 +7,7 @@ Type=simple
 ExecStart=/usr/bin/python3 /usr/local/bin/moshai-pulse.py
 Restart=always
 RestartSec=5
+StartLimitInterval=0
 User=root
 Environment=PYTHONUNBUFFERED=1
 
