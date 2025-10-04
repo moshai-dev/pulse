@@ -60,8 +60,8 @@ fi
 
 # --- Install Python modules ---
 echo "Installing Python modules..."
-python3 -m pip install --upgrade pip
-python3 -m pip install psutil requests > /dev/null 2>&1
+python3 -m pip install --upgrade pip --break-system-packages
+python3 -m pip install psutil requests --break-system-packages > /dev/null 2>&1
 
 # --- Setup directories ---
 mkdir -p "$CONFIG_DIR" "$DATA_DIR"
