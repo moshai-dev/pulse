@@ -25,24 +25,34 @@ echo ""
 echo "=== Installing Moshai Pulse Agent ==="
 echo ""
 
-# --- Detect package manager ---
+# --- Detect package manager and install system dependencies ---
 if command -v apt-get >/dev/null 2>&1; then
-  PKG_INSTALL="apt-get install -y -qq"
-  UPDATE_CMD="apt-get update -qq"
+    PKG_INSTALL="apt-get install -y -qq"
+    UPDATE_CMD="apt-get update -qq"
+    $UPDATE_CMD
+    $PKG_INSTALL python3 python3-pip curl sqlite -y
 elif command -v yum >/dev/null 2>&1; then
-  PKG_INSTALL="yum install -y -q"
-  UPDATE_CMD="yum makecache -q"
+    PKG_INSTALL="yum install -y -q"
+    UPDATE_CMD="yum makecache -q"
+    $UPDATE_CMD
+    # Enable EPEL for pip on older RHEL/CentOS
+    yum install -y epel-release
+    $PKG_INSTALL python3 python3-pip curl sqlite
 elif command -v dnf >/dev/null 2>&1; then
-  PKG_INSTALL="dnf install -y -q"
-  UPDATE_CMD="dnf makecache -q"
+    PKG_INSTALL="dnf install -y -q"
+    UPDATE_CMD="dnf makecache -q"
+    $UPDATE_CMD
+    $PKG_INSTALL python3 python3-pip curl sqlite
 else
-  echo "❌ Unsupported Linux distribution."
-  exit 1
+    echo "❌ Unsupported Linux distribution."
+    exit 1
 fi
 
-echo "Installing system dependencies..."
-$UPDATE_CMD
-$PKG_INSTALL python3 python3-pip curl sqlite -y > /dev/null 2>&1 || true
+# --- Ensure pip exists ---
+if ! command -v pip3 >/dev/null 2>&1; then
+    echo "pip not found. Installing pip..."
+    curl -sS https://bootstrap.pypa.io/get-pip.py | python3
+fi
 
 # --- Install Python modules ---
 echo "Installing Python modules..."
