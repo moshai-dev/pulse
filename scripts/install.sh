@@ -46,7 +46,7 @@ echo "Detected OS: $SERVER_OS"
 echo "Installing system dependencies..."
 if [[ "$SERVER_OS" == "Ubuntu" ]]; then
     apt-get update -qq
-    apt-get install -y -qq python3 python3-pip curl sqlite ca-certificates
+    apt-get install -y -qq python3 python3-pip curl sqlite3 ca-certificates
 else
     # CentOS / AlmaLinux / CloudLinux / openEuler
     yum install -y python3 python3-pip curl sqlite ca-certificates
