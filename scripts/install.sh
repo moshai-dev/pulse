@@ -29,7 +29,7 @@ echo ""
 OUTPUT=$(cat /etc/*release 2>/dev/null || true)
 SERVER_OS=""
 
-if echo "$OUTPUT" | grep -q -E "Ubuntu 18.04|Ubuntu 20.04|Ubuntu 22.04"; then
+if echo "$OUTPUT" | grep -qi "ubuntu"; then
     SERVER_OS="Ubuntu"
 elif echo "$OUTPUT" | grep -q -E "CentOS Linux 7"; then
     SERVER_OS="CentOS7"
