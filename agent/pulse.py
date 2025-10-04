@@ -7,6 +7,7 @@ import socket
 import requests
 import psutil
 import configparser
+import subprocess
 
 # --- Load config ---
 CONFIG_PATH = "/etc/moshai-pulse/config"
@@ -58,24 +59,58 @@ def collect_metrics(interval=COLLECTION_INTERVAL):
     net_in = net_end.bytes_recv - net_start.bytes_recv
     net_out = net_end.bytes_sent - net_start.bytes_sent
 
+    # --- Clean CPU model ---
+    cpu_model_raw = os.popen("lscpu | grep 'Model name' | awk -F ':' '{print $2}'").read().strip()
+    cpu_model = cpu_model_raw.splitlines()[0].strip()  # remove duplicates, extra spaces
+
     ts = int(time.time())
     payload = {
         "hostname": hostname,
         "timestamp": ts,
-        "cpu": {"avg": cpu_avg, "max": cpu_max},
+        "cpu": {"avg": cpu_avg, "max": cpu_max, "cores": psutil.cpu_count()},
         "memory": {"used": mem.used, "total": mem.total, "percent": mem.percent},
         "disk": {
             "used": disk_usage.used,
             "total": disk_usage.total,
+            "percent": disk_usage.percent,
             "read_bytes": disk_read,
             "write_bytes": disk_write
         },
-        "network": {"in_bytes": net_in, "out_bytes": net_out}
+        "network": {"in_bytes": net_in, "out_bytes": net_out},
+        "system": {
+            "os": os.uname().sysname + " " + os.uname().release,
+            "cpu_model": cpu_model,
+            "memory_total_bytes": mem.total
+        },
+        "services": get_all_service_status()
     }
 
     cur.execute("INSERT INTO metrics (timestamp, payload) VALUES (?, ?)", (ts, json.dumps(payload)))
     conn.commit()
     print(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] Collected metrics")
+
+# --- Get all systemd service statuses (compatible with older Python) ---
+def get_all_service_status():
+    services = {}
+    try:
+        result = subprocess.run(
+            ["systemctl", "list-units", "--type=service", "--all", "--no-legend", "--no-pager"],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            universal_newlines=True,   # compatible with Python 3.4+
+            check=True
+        )
+        lines = result.stdout.strip().split("\n")
+        for line in lines:
+            if not line:
+                continue
+            parts = line.split()
+            service_name = parts[0]
+            active_state = parts[3] if len(parts) > 3 else "unknown"
+            services[service_name] = active_state
+    except Exception as e:
+        services["error"] = str(e)
+    return services
 
 # --- Send Metrics ---
 def send_batch():
